@@ -9,5 +9,5 @@ dependencies = [
     "fastmcp>=2.14.2",
     "langchain>=1.2.3",
     "langchain-huggingface>=1.2.0",
-    "psycopg2>=2.9.11",
+    "psycopg2-binary>=2.9.11",
 ]
