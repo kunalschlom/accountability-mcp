@@ -24,7 +24,7 @@ import os
 
 def create_model():
     
-   hf_token="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"
+   hf_token=os.getenv("HF_TOKEN")
    if not hf_token:
         raise ValueError("the hf token is not available")   
    repo_id="Qwen/Qwen2.5-7B-Instruct"     
@@ -36,7 +36,7 @@ def create_model():
    model=ChatHuggingFace(llm=llm)
 
    return model 
-model=create_model()
+
 
 
 
@@ -212,7 +212,7 @@ Confidence:
 Input metrics:
 {data}
 """
-
+    model=create_model()
     response = await model.ainvoke(prompt)
     text = response.content
 
