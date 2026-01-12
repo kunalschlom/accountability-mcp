@@ -11,23 +11,11 @@ import langchain
 import langchain_huggingface 
 from langchain_huggingface import ChatHuggingFace,HuggingFaceEndpoint, HuggingFaceEmbeddings
 import os 
-
+from create_modell import create_model
 from dotenv import load_dotenv
 load_dotenv()
-def create_model():
-    
-   hf_token=os.getenv("HF_TOKEN")
-   if not hf_token:
-        raise ValueError("the hf token is not available")   
-   repo_id="Qwen/Qwen2.5-7B-Instruct"     
-   llm=HuggingFaceEndpoint(
-       repo_id=repo_id,
-       huggingfacehub_api_token=hf_token,
-       task="conversational"
-   ) 
-   model=ChatHuggingFace(llm=llm)
+model=create_model()
 
-   return model 
 
 
 
@@ -174,7 +162,7 @@ async def summary(filters: dict = {}):
         "low_priority_tasks_percentage":low_priority/total,
         "medium_priority_tasks_percentage":medium_priority/total
     }
-    model = create_model()
+    
 
     prompt = f"""
 You are a productivity analyzing machine.
@@ -203,7 +191,7 @@ Input metrics:
 {data}
 """
 
-    response = model.invoke(prompt)
+    response = await model.ainvoke(prompt)
     text = response.content
 
     clean = re.sub(r"```json|```", "", text).strip()
@@ -241,6 +229,9 @@ Input metrics:
 if __name__=="__main__":
     initialise_db()
     mcp.run(transport='http',port=8000,host='0.0.0.0')
+
+
+
 
 
 
