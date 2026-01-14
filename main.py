@@ -1,28 +1,34 @@
 from fastmcp import FastMCP
 
-from fastmcp import FastMCP
+
 import psycopg2
 import asyncpg
 from datetime import datetime
 import json
 import re
-import langchain
 
-import langchain_huggingface 
-from langchain_huggingface import ChatHuggingFace,HuggingFaceEndpoint, HuggingFaceEmbeddings
-import os 
 
-from dotenv import load_dotenv
-load_dotenv()
-import langchain
-import langgraph
-import langchain_core
-import langchain_huggingface 
-from langchain_huggingface import ChatHuggingFace,HuggingFaceEndpoint, HuggingFaceEmbeddings
-import os 
+
+async def get_conn():
+    import asyncpg 
+    import os
+    from dotenv import load_dotenv
+    load_dotenv()
+    return await asyncpg.connect(
+        os.getenv("DATABASE_URL"),
+      
+    )
+
+
+
 
 
 def create_model():
+   import langchain_huggingface 
+   from langchain_huggingface import ChatHuggingFace,HuggingFaceEndpoint, HuggingFaceEmbeddings
+   import os 
+   from dotenv import load_dotenv
+   load_dotenv()
     
    hf_token=os.getenv("HF_TOKEN")
    if not hf_token:
@@ -43,39 +49,6 @@ def create_model():
 
 mcp = FastMCP(name="ProductivityMCP")
 
-# --------------------------
-# Database Initialization
-# --------------------------
-def initialise_db():
-    conn = psycopg2.connect(
-        host="localhost",
-        port=5432,
-        user="postgres",
-        password="kunal",
-        database="user_info"
-    )
-    cur = conn.cursor()
-
-    cur.execute("""
-    CREATE SCHEMA IF NOT EXISTS productivity;
-    """)
-
- 
-    cur.execute("""
-     CREATE TABLE if not exists productivity.productivity_assessments (
-    id SERIAL PRIMARY KEY,
-    date DATE NOT NULL,
-    state VARCHAR(50) NOT NULL,
-    recommended_action VARCHAR(50) NOT NULL,
-    confidence NUMERIC(3,2) CHECK(confidence BETWEEN 0 AND 1)
-);
-
-    
-    """)
-
-    conn.commit()
-    cur.close()
-    conn.close()
 
 
 async def list_tasks2(filters: dict = {}):
@@ -112,13 +85,7 @@ async def list_tasks2(filters: dict = {}):
 
     sql = "SELECT * FROM tasks WHERE " + " AND ".join(conditions)
 
-    conn = await asyncpg.connect(
-        host="localhost",
-        port=5432,
-        user="postgres",
-        password="kunal",
-        database="projectmanagement"
-    )
+    conn = await get_conn()
 
     rows = await conn.fetch(sql, *values)
     await conn.close()
@@ -130,11 +97,13 @@ async def list_tasks2(filters: dict = {}):
 
 @mcp.tool
 
-async def summary(filters: dict = {}):
+async def summary(filters: dict | None=None):
     """
     Return a summary of tasks, including total, pending, completed, overdue.
     Optional filters: priority, status, due_date
     """
+    if filters is None:
+        filters={}
    
     result = await list_tasks2(filters)
     rows = result.get('rows', [])
@@ -218,13 +187,7 @@ Input metrics:
 
     clean = re.sub(r"```json|```", "", text).strip()
     output = json.loads(clean)
-    conn = await asyncpg.connect(
-        host="localhost",
-        port=5432,
-        user="postgres",
-        password="kunal",
-        database="user_info"
-    )
+    conn = await get_conn()
 
     await conn.execute(
         """
@@ -249,7 +212,7 @@ Input metrics:
 
 
 if __name__=="__main__":
-    initialise_db()
+    
     mcp.run(transport='http',port=8000,host='0.0.0.0')
 
 
